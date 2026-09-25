@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Students{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <p class="eyebrow mb-2">Administrator Console</p>
+            <h2 class="fw-bold mb-2">Student Management</h2>
+            <p class="text-muted mb-0">Search, filter, and manage enrolled students with a modern campus operations workflow.</p>
+        </div>
+        <a href="{% url 'add_student' %}" class="btn btn-success btn-lg">
+            <i class="bi bi-person-plus-fill me-2"></i>Add Student
+        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="stat-icon bg-primary"><i class="bi bi-people-fill"></i></div><div><small class="text-muted text-uppercase">Total Students</small><h3 class="mb-0">{{ total_students }}</h3></div></div></div></div>
+        <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="stat-icon bg-success"><i class="bi bi-graph-up-arrow"></i></div><div><small class="text-muted text-uppercase">With Attendance</small><h3 class="mb-0">{{ recorded_students }}</h3></div></div></div></div>
+        <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="stat-icon bg-info"><i class="bi bi-building"></i></div><div><small class="text-muted text-uppercase">Departments</small><h3 class="mb-0">{{ department_count }}</h3></div></div></div></div>
+        <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="stat-icon bg-warning"><i class="bi bi-person-check"></i></div><div><small class="text-muted text-uppercase">Present Today</small><h3 class="mb-0">{{ present_today }}</h3></div></div></div></div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="studentFilterForm" method="get" class="row g-3 align-items-end" aria-label="Student filters">
+                <div class="col-12 col-lg-5">
+                    <label for="searchQuery" class="form-label visually-hidden">Search students</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                        <input id="searchQuery" name="q" type="search" class="form-control" placeholder="Search by name, roll number or department" value="{{ request.GET.q|default:'' }}" autocomplete="off">
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-2">
+                    <label for="filterClass" class="form-label visually-hidden">Class</label>
+                    <select id="filterClass" name="class" class="form-select">
+                        <option value="">All Classes</option>
+                        <option value="1" {% if request.GET.class == '1' %}selected{% endif %}>Year 1</option>
+                        <option value="2" {% if request.GET.class == '2' %}selected{% endif %}>Year 2</option>
+                        <option value="3" {% if request.GET.class == '3' %}selected{% endif %}>Year 3</option>
+                        <option value="4" {% if request.GET.class == '4' %}selected{% endif %}>Year 4</option>
+                    </select>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-2">
+                    <label for="filterDepartment" class="form-label visually-hidden">Department</label>
+                    <select id="filterDepartment" name="department" class="form-select">
+                        <option value="">All Departments</option>
+                        {% for dept in departments %}
+                        <option value="{{ dept }}" {% if department_filter|lower == dept|lower %}selected{% endif %}>{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-2">
+                    <label for="filterAttendance" class="form-label visually-hidden">Attendance</label>
+                    <select id="filterAttendance" name="attendance" class="form-select">
+                        <option value="">All Attendance</option>
+                        <option value="recorded" {% if request.GET.attendance == 'recorded' %}selected{% endif %}>Recorded</option>
+                        <option value="pending" {% if request.GET.attendance == 'pending' %}selected{% endif %}>Pending</option>
+                    </select>
+                </div>
+                <div class="col-12 col-sm-6 col-lg-1 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100" aria-label="Apply filters"><i class="bi bi-funnel-fill"></i></button>
+                    <button id="resetFilters" type="button" class="btn btn-outline-secondary w-100" aria-label="Reset filters"><i class="bi bi-arrow-counterclockwise"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if students %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" aria-describedby="studentTableCaption">
+                    <caption id="studentTableCaption" class="visually-hidden">A list of students with roll number, department, and year information.</caption>
+                    <thead>
+                        <tr><th>#</th><th>Roll No</th><th>Student Name</th><th>Department</th><th>Year</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody id="studentTableBody">
+                        {% for student in students %}
+                        <tr data-name="{{ student.name|lower }}" data-roll="{{ student.roll_no|lower }}" data-department="{{ student.department|lower }}" data-class="{{ student.year }}" data-attendance="{% if student.attendance_count > 0 %}recorded{% else %}pending{% endif %}">
+                            <td>{{ forloop.counter }}</td>
+                            <td><span class="badge bg-secondary">{{ student.roll_no }}</span></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    {% if student.profile_image %}<img src="{{ student.profile_image.url }}" alt="" class="student-avatar" loading="lazy">{% else %}<i class="fa-solid fa-user text-primary"></i>{% endif %}
+                                    <div>{{ student.name }}{% if student.email %}<div class="small text-muted">{{ student.email }}</div>{% endif %}</div>
+                                </div>
+                            </td>
+                            <td>{{ student.department }}</td>
+                            <td>Year {{ student.year }}</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'update_student' student.id %}" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-pen-to-square"></i> Edit</a>
+                                    <form action="{% url 'delete_student' student.id %}" method="post" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this student?')"><i class="fa-solid fa-trash"></i> Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fa-solid fa-users fa-4x text-secondary mb-3"></i>
+                <h4>No Students Found</h4>
+                <p class="text-muted">Click the Add Student button to register your first student.</p>
+                <a href="{% url 'add_student' %}" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> Add Student</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    const searchInput = document.getElementById('searchQuery');
+    const classSelect = document.getElementById('filterClass');
+    const departmentSelect = document.getElementById('filterDepartment');
+    const attendanceSelect = document.getElementById('filterAttendance');
+    const tableBody = document.getElementById('studentTableBody');
+    const resetButton = document.getElementById('resetFilters');
+
+    function applyFilters() {
+        const term = (searchInput.value || '').trim().toLowerCase();
+        const selectedClass = (classSelect.value || '').toString();
+        const selectedDepartment = (departmentSelect.value || '').toLowerCase();
+        const selectedAttendance = (attendanceSelect.value || '').toLowerCase();
+        if (!tableBody) return;
+
+        const staleEmptyState = document.getElementById('noResultsMessage');
+        if (staleEmptyState) staleEmptyState.remove();
+        const rows = Array.from(tableBody.querySelectorAll('tr'));
+        let visibleCount = 0;
+        rows.forEach((row) => {
+            const rowText = [row.getAttribute('data-name') || '', row.getAttribute('data-roll') || '', row.getAttribute('data-department') || ''].join(' ').toLowerCase();
+            const matchesTerm = !term || rowText.includes(term);
+            const matchesClass = !selectedClass || row.getAttribute('data-class') === selectedClass;
+            const matchesDepartment = !selectedDepartment || (row.getAttribute('data-department') || '').includes(selectedDepartment);
+            const matchesAttendance = !selectedAttendance || row.getAttribute('data-attendance') === selectedAttendance;
+            const shouldShow = matchesTerm && matchesClass && matchesDepartment && matchesAttendance;
+            row.style.display = shouldShow ? '' : 'none';
+            if (shouldShow) visibleCount += 1;
+        });
+
+        if (visibleCount === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.id = 'noResultsMessage';
+            emptyRow.innerHTML = '<td colspan="6" class="text-center text-muted py-4">No students match the current filters.</td>';
+            tableBody.appendChild(emptyRow);
+        }
+    }
+
+    [searchInput, classSelect, departmentSelect, attendanceSelect].forEach((element) => {
+        if (element) {
+            element.addEventListener('input', applyFilters);
+            element.addEventListener('change', applyFilters);
+        }
+    });
+
+    if (resetButton) {
+        resetButton.addEventListener('click', () => {
+            searchInput.value = '';
+            classSelect.value = '';
+            departmentSelect.value = '';
+            attendanceSelect.value = '';
+            applyFilters();
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', applyFilters);
+</script>
+
+{% endblock %}

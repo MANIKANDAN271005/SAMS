@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Leave Records{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <p class="eyebrow mb-2">Leave Management</p>
+            <h2 class="fw-bold mb-2">Leave Records</h2>
+            <p class="text-muted mb-0">Record student leave. Leave days up to today are saved as "Leave" in attendance automatically.</p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-4"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="stat-icon bg-primary"><i class="bi bi-journal-text"></i></div><div><small class="text-muted text-uppercase">Total Records</small><h3 class="mb-0">{{ total_leaves }}</h3></div></div></div></div>
+        <div class="col-sm-4"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="stat-icon bg-warning"><i class="bi bi-calendar-x"></i></div><div><small class="text-muted text-uppercase">On Leave Today</small><h3 class="mb-0">{{ active_leaves }}</h3></div></div></div></div>
+        <div class="col-sm-4"><div class="card h-100"><div class="card-body d-flex align-items-center gap-3"><div class="stat-icon bg-info"><i class="bi bi-calendar-plus"></i></div><div><small class="text-muted text-uppercase">Upcoming</small><h3 class="mb-0">{{ upcoming_leaves }}</h3></div></div></div></div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-plus-circle me-2 text-primary"></i>Add Leave</h5>
+                    {% if errors %}
+                        <div class="alert alert-danger" role="alert" aria-live="assertive">
+                            <ul class="mb-0 ps-3">{% for field, error in errors.items %}<li>{{ error }}</li>{% endfor %}</ul>
+                        </div>
+                    {% endif %}
+                    {% if students %}
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="leaveStudent" class="form-label">Student</label>
+                            <select id="leaveStudent" name="student" class="form-select{% if errors.student %} is-invalid{% endif %}" required>
+                                <option value="">Select student</option>
+                                {% for student in students %}
+                                    <option value="{{ student.id }}" {% if form_data.student == student.id|stringformat:'s' %}selected{% endif %}>{{ student.name }} ({{ student.roll_no }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-6">
+                                <label for="leaveStart" class="form-label">From</label>
+                                <input id="leaveStart" type="date" name="start_date" class="form-control{% if errors.start_date %} is-invalid{% endif %}" value="{{ form_data.start_date|default:today }}" required>
+                            </div>
+                            <div class="col-6">
+                                <label for="leaveEnd" class="form-label">To</label>
+                                <input id="leaveEnd" type="date" name="end_date" class="form-control{% if errors.end_date %} is-invalid{% endif %}" value="{{ form_data.end_date|default:today }}" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="leaveReason" class="form-label">Reason</label>
+                            <textarea id="leaveReason" name="reason" rows="3" maxlength="255" class="form-control{% if errors.reason %} is-invalid{% endif %}" placeholder="e.g. Medical leave" required>{{ form_data.reason|default:'' }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100"><i class="bi bi-save me-2"></i>Save Leave</button>
+                    </form>
+                    {% else %}
+                        <p class="text-muted mb-3">Add a student before recording leave.</p>
+                        <a href="{% url 'add_student' %}" class="btn btn-primary"><i class="bi bi-person-plus me-2"></i>Add Student</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                        <div><h5 class="fw-bold mb-1">All Leave Records</h5><p class="text-muted mb-0">Most recent leave first.</p></div>
+                        <form method="get" class="d-flex gap-2" role="search">
+                            <input type="search" name="q" class="form-control" placeholder="Search student or reason" value="{{ query }}" aria-label="Search leave records">
+                            <button class="btn btn-outline-primary" type="submit" aria-label="Search"><i class="bi bi-search"></i></button>
+                        </form>
+                    </div>
+                    {% if leaves %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" aria-label="Leave records">
+                            <thead><tr><th>Student</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Actions</th></tr></thead>
+                            <tbody>
+                                {% for leave in leaves %}
+                                <tr>
+                                    <td><div class="fw-semibold">{{ leave.student.name }}</div><div class="small text-muted">{{ leave.student.roll_no }}</div></td>
+                                    <td>{{ leave.start_date|date:"M d, Y" }}</td>
+                                    <td>{{ leave.end_date|date:"M d, Y" }}</td>
+                                    <td class="text-center">{{ leave.days }}</td>
+                                    <td>{{ leave.reason }}</td>
+                                    <td>
+                                        <form action="{% url 'delete_leave' leave.id %}" method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this leave record?')"><i class="fa-solid fa-trash"></i> Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-calendar2-x fs-1 text-muted"></i>
+                        <p class="mt-3 mb-0 text-muted">{% if query %}No leave records match "{{ query }}".{% else %}No leave records yet.{% endif %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

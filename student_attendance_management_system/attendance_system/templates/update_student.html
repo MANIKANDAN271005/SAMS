@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Student{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <p class="text-uppercase text-secondary mb-1 small">Admin Dashboard</p>
+            <h1 class="h3 fw-bold mb-2">Update Student</h1>
+            <p class="text-muted mb-0">Edit the details of {{ student.name }}.</p>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body">
+            {% if errors %}
+                <div class="alert alert-danger" role="alert" aria-live="assertive">
+                    <h6 class="alert-heading">Please correct the following errors:</h6>
+                    <ul class="mb-0">{% for field, error in errors.items %}<li>{{ error }}</li>{% endfor %}</ul>
+                </div>
+            {% endif %}
+            <form method="post" enctype="multipart/form-data" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-6">
+                    <label for="roll_no" class="form-label">Roll Number</label>
+                    <input id="roll_no" name="roll_no" class="form-control{% if errors.roll_no %} is-invalid{% endif %}" value="{{ form_data.roll_no }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="name" class="form-label">Student Name</label>
+                    <input id="name" name="name" class="form-control{% if errors.name %} is-invalid{% endif %}" value="{{ form_data.name }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="department" class="form-label">Department</label>
+                    <input id="department" name="department" class="form-control{% if errors.department %} is-invalid{% endif %}" value="{{ form_data.department }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="year" class="form-label">Year</label>
+                    <select id="year" name="year" class="form-select{% if errors.year %} is-invalid{% endif %}" required>
+                        <option value="">Select Year</option>
+                        <option value="1" {% if form_data.year == '1' %}selected{% endif %}>First Year</option>
+                        <option value="2" {% if form_data.year == '2' %}selected{% endif %}>Second Year</option>
+                        <option value="3" {% if form_data.year == '3' %}selected{% endif %}>Third Year</option>
+                        <option value="4" {% if form_data.year == '4' %}selected{% endif %}>Fourth Year</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="email" class="form-label">Email</label>
+                    <input id="email" name="email" type="email" class="form-control{% if errors.email %} is-invalid{% endif %}" value="{{ form_data.email|default:'' }}">
+                </div>
+                <div class="col-md-6">
+                    <label for="phone" class="form-label">Phone</label>
+                    <input id="phone" name="phone" type="tel" class="form-control{% if errors.phone %} is-invalid{% endif %}" value="{{ form_data.phone|default:'' }}">
+                </div>
+                <div class="col-12">
+                    <label for="profile_image" class="form-label">Profile Picture</label>
+                    <div class="d-flex align-items-center gap-3">
+                        {% if student.profile_image %}<img src="{{ student.profile_image.url }}" alt="Current profile picture" class="student-avatar student-avatar-lg">{% endif %}
+                        <input id="profile_image" name="profile_image" type="file" accept="image/*" class="form-control{% if errors.profile_image %} is-invalid{% endif %}">
+                    </div>
+                    <div class="form-text">PNG, JPG up to 5MB. Leave empty to keep the current picture.</div>
+                </div>
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="{% url 'students' %}" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

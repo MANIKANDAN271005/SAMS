@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <p class="eyebrow mb-2">Attendance Tracking</p>
+            <h2 class="fw-bold mb-2">Mark Attendance</h2>
+            <p class="text-muted mb-0">Record attendance as Present, Absent or Leave for the selected date.</p>
+        </div>
+    </div>
+
+    <form method="get" id="attendance-filter" class="row g-3 mb-4 align-items-end">
+        <div class="col-12 col-md-3"><label class="form-label small" for="attendance-date">Date</label><input type="date" class="form-control" id="attendance-date" name="date" value="{{ today|default:'' }}" max="{{ max_date }}" aria-label="Select attendance date"></div>
+        <div class="col-12 col-md-3"><label class="form-label small" for="class-select">Class</label><select class="form-select" id="class-select" name="class" aria-label="Filter students by class"><option value="">All Classes</option>{% for cls in classes %}<option value="{{ cls.id }}" {% if cls.id == selected_class %}selected{% endif %}>{{ cls.name }}</option>{% endfor %}</select></div>
+        <div class="col-12 col-md-4"><label class="form-label small" for="student-search">Search Students</label><input type="search" id="student-search" class="form-control" placeholder="Search by name or roll" autocomplete="off" aria-label="Search students by name or roll number"></div>
+        <div class="col-12 col-md-2 text-md-end"><button id="bulk-present" class="btn btn-success w-100" type="button" aria-label="Mark selected or all visible students as present">Mark All Present</button></div>
+    </form>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6 col-lg-3"><div class="card p-3"><div class="d-flex justify-content-between"><div><small class="text-muted">Total Students</small><div class="h5 mb-0">{{ total_students|default:0 }}</div></div><i class="fa-solid fa-users fa-2x text-primary"></i></div></div></div>
+                <div class="col-sm-6 col-lg-3"><div class="card p-3"><div class="d-flex justify-content-between"><div><small class="text-muted">Present</small><div class="h5 mb-0">{{ present_count|default:0 }}</div></div><i class="fa-solid fa-circle-check fa-2x text-success"></i></div></div></div>
+                <div class="col-sm-6 col-lg-3"><div class="card p-3"><div class="d-flex justify-content-between"><div><small class="text-muted">Absent</small><div class="h5 mb-0">{{ absent_count|default:0 }}</div></div><i class="fa-solid fa-circle-xmark fa-2x text-danger"></i></div></div></div>
+                <div class="col-sm-6 col-lg-3"><div class="card p-3"><div class="d-flex justify-content-between"><div><small class="text-muted">Leave</small><div class="h5 mb-0">{{ leave_count|default:0 }}</div></div><i class="fa-solid fa-calendar-xmark fa-2x text-warning"></i></div></div></div>
+            </div>
+
+            <form method="POST" id="attendance-form">
+                {% csrf_token %}
+                <input type="hidden" name="date" value="{{ today }}">
+                <input type="hidden" name="class" value="{{ selected_class|default:'' }}">
+                <div class="table-responsive position-relative">
+                    <table class="table table-hover align-middle" aria-label="Student attendance list">
+                        <thead><tr><th style="width:40px"><div class="form-check"><input class="form-check-input" type="checkbox" id="select-all" aria-label="Select all students"></div></th><th>Roll</th><th>Student</th><th class="text-center">Status</th><th class="text-center">Actions</th></tr></thead>
+                        <tbody id="students-table">
+                            {% for row in student_rows %}
+                                {% with student=row.student %}
+                                <tr data-name="{{ student.name|lower }}" data-roll="{{ student.roll_no|lower }}" data-on-leave="{{ row.on_leave|yesno:'1,0' }}">
+                                    <td><div class="form-check"><input class="form-check-input row-select" type="checkbox" value="{{ student.id }}" aria-label="Select {{ student.name }}"></div></td>
+                                    <td>{{ student.roll_no }}</td>
+                                    <td>
+                                        <div class="fw-bold">{{ student.name }}</div>
+                                        <div class="small text-muted">{{ student.department }} &middot; Year {{ student.year }}</div>
+                                        {% if row.on_leave %}<span class="badge bg-warning-subtle text-warning-emphasis mt-1"><i class="bi bi-calendar-x me-1"></i>On approved leave</span>{% endif %}
+                                    </td>
+                                    <td class="text-center"><span class="badge status-badge" data-saved="{{ row.saved|yesno:'1,0' }}" data-initial-saved="{{ row.saved|yesno:'1,0' }}">Not marked</span></td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group" aria-label="Attendance status for {{ student.name }}">
+                                            <button type="button" class="btn btn-sm btn-outline-success mark-btn" data-status="Present" title="Mark as present" aria-label="Mark {{ student.name }} as present"><i class="fa-solid fa-circle-check"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger mark-btn" data-status="Absent" title="Mark as absent" aria-label="Mark {{ student.name }} as absent"><i class="fa-solid fa-circle-xmark"></i></button>
+                                            <button type="button" class="btn btn-sm btn-outline-warning mark-btn" data-status="Leave" title="Mark as leave" aria-label="Mark {{ student.name }} as on leave"><i class="fa-solid fa-calendar-xmark"></i></button>
+                                        </div>
+                                        <input type="hidden" class="status-input" name="status_{{ student.id }}" value="{{ row.status }}">
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                            {% empty %}
+                                <tr><td colspan="5" class="text-center py-5"><div class="text-muted"><i class="fa-regular fa-face-frown fa-2x mb-2"></i><div>No students found for the selected class.</div><a href="{% url 'add_student' %}" class="btn btn-sm btn-primary mt-3">Add Student</a></div></td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                    <div class="d-flex gap-2 flex-wrap"><button type="submit" id="save-btn" class="btn btn-success" aria-label="Save attendance records" {% if not student_rows %}disabled{% endif %}><span id="save-spinner" class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span><i class="fa-solid fa-floppy-disk"></i> Save Attendance</button><button type="reset" class="btn btn-secondary" aria-label="Reset attendance form">Reset</button></div>
+                    <div class="text-muted small">Attendance date: {{ last_updated|default:"-" }}</div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        const STATUS_STYLES = {
+            Present: 'bg-success',
+            Absent: 'bg-danger',
+            Leave: 'bg-warning text-dark',
+            '': 'bg-secondary'
+        };
+        const filterForm = document.getElementById('attendance-filter');
+        const attendanceForm = document.getElementById('attendance-form');
+        const tableBody = document.getElementById('students-table');
+        const searchInput = document.getElementById('student-search');
+        const selectAll = document.getElementById('select-all');
+        const rows = Array.from(tableBody.querySelectorAll('tr')).filter((row) => row.querySelector('.status-input'));
+
+        function renderRow(row) {
+            const status = row.querySelector('.status-input').value;
+            const badge = row.querySelector('.status-badge');
+            badge.className = 'badge status-badge ' + STATUS_STYLES[status || ''];
+            badge.textContent = status || 'Not marked';
+            if (status && badge.dataset.saved !== '1') badge.textContent += ' (unsaved)';
+            row.querySelectorAll('.mark-btn').forEach((btn) => {
+                const active = btn.dataset.status === status;
+                btn.classList.toggle('active', active);
+                btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+        }
+
+        function setStatus(row, status) {
+            row.querySelector('.status-input').value = status;
+            row.querySelector('.status-badge').dataset.saved = '0';
+            renderRow(row);
+        }
+
+        rows.forEach((row) => {
+            renderRow(row);
+            row.querySelectorAll('.mark-btn').forEach((btn) => {
+                btn.addEventListener('click', () => setStatus(row, btn.dataset.status));
+            });
+        });
+
+        // Changing the date or class reloads the list for that selection.
+        ['attendance-date', 'class-select'].forEach((id) => {
+            document.getElementById(id).addEventListener('change', () => filterForm.submit());
+        });
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') event.preventDefault();
+        });
+
+        searchInput.addEventListener('input', () => {
+            const term = searchInput.value.trim().toLowerCase();
+            rows.forEach((row) => {
+                const text = (row.dataset.name || '') + ' ' + (row.dataset.roll || '');
+                row.style.display = !term || text.includes(term) ? '' : 'none';
+            });
+        });
+
+        const visibleRows = () => rows.filter((row) => row.style.display !== 'none');
+
+        selectAll.addEventListener('change', () => {
+            visibleRows().forEach((row) => { row.querySelector('.row-select').checked = selectAll.checked; });
+        });
+
+        // Applies to the selected students, or to every visible student when none are selected.
+        // Students on approved leave are skipped; they can still be marked individually.
+        document.getElementById('bulk-present').addEventListener('click', () => {
+            const selected = visibleRows().filter((row) => row.querySelector('.row-select').checked);
+            (selected.length ? selected : visibleRows())
+                .filter((row) => row.dataset.onLeave !== '1')
+                .forEach((row) => setStatus(row, 'Present'));
+        });
+
+        attendanceForm.addEventListener('reset', () => {
+            // Let the browser restore the original values first, then redraw the badges.
+            setTimeout(() => {
+                rows.forEach((row) => {
+                    const badge = row.querySelector('.status-badge');
+                    badge.dataset.saved = badge.dataset.initialSaved;
+                    renderRow(row);
+                });
+            });
+        });
+
+        attendanceForm.addEventListener('submit', () => {
+            document.getElementById('save-spinner').classList.remove('d-none');
+            document.getElementById('save-btn').setAttribute('disabled', 'disabled');
+        });
+    })();
+</script>
+{% endblock %}

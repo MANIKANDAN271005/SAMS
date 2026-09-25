@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
+        <div>
+            <p class="eyebrow mb-2">Account Preferences</p>
+            <h2 class="fw-bold mb-2">Settings</h2>
+            <p class="text-muted mb-0">Manage your account details, preferences, and security settings.</p>
+        </div>
+    </div>
+
+    <div class="row gy-4">
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3"><div><h5 class="fw-bold mb-1">Profile Settings</h5><p class="text-muted mb-0">Keep your public profile details up to date.</p></div><i class="bi bi-person-circle fs-4 text-secondary"></i></div>
+                    <form method="post" action="{% url 'settings' %}">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label">Full name</label><input type="text" name="full_name" class="form-control" value="{{ user.get_full_name }}"></div>
+                            <div class="col-md-6"><label class="form-label">Email</label><input type="email" name="email" class="form-control" value="{{ user.email }}"></div>
+                            <div class="col-12"><label class="form-label">Username</label><input type="text" name="username" class="form-control" value="{{ user.username }}"></div>
+                            <div class="col-12 text-end"><button type="submit" class="btn btn-primary">Update Account</button></div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3"><div><h5 class="fw-bold mb-1">Security</h5><p class="text-muted mb-0">Protect your account and review active sessions. Two-factor authentication is coming soon.</p></div><i class="bi bi-lock-fill fs-4 text-secondary"></i></div>
+                    <div class="d-flex justify-content-between align-items-center mb-2"><div><div class="fw-semibold">Two-factor authentication</div><div class="small text-muted">Protect your account with 2FA</div></div><div class="form-check form-switch"><input class="form-check-input" type="checkbox" disabled></div></div>
+                    <div class="d-flex justify-content-between align-items-center mb-3"><div><div class="fw-semibold">Remembered devices</div><div class="small text-muted">Sign out from other devices</div></div><a href="{% url 'logout' %}" class="btn btn-sm btn-outline-secondary">Sign out</a></div>
+                    <div class="text-end"><button type="button" class="btn btn-outline-primary" disabled title="Coming soon">Save Security</button></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-1">Preferences</h5><p class="small text-muted mb-3">Coming soon.</p>
+                    <div class="d-flex justify-content-between align-items-center mb-2"><div><div class="fw-semibold">Email notifications</div><div class="small text-muted">Receive email alerts for key events</div></div><div class="form-check form-switch"><input class="form-check-input" type="checkbox" disabled></div></div>
+                    <div class="d-flex justify-content-between align-items-center mb-2"><div><div class="fw-semibold">SMS alerts</div><div class="small text-muted">Get SMS updates for important changes</div></div><div class="form-check form-switch"><input class="form-check-input" type="checkbox" disabled></div></div>
+                    <div class="d-flex justify-content-between align-items-center mb-3"><div><div class="fw-semibold">Sound notifications</div><div class="small text-muted">Play alert sounds in-app</div></div><div class="form-check form-switch"><input class="form-check-input" type="checkbox" disabled></div></div>
+                    <div class="text-end"><button type="button" class="btn btn-primary btn-sm" disabled title="Coming soon">Save Preferences</button></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-1">Theme</h5><p class="small text-muted mb-3">Coming soon.</p>
+                    <div class="form-check mb-2"><input class="form-check-input" type="radio" name="theme" id="themeLight" checked disabled><label class="form-check-label" for="themeLight">Light</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="radio" name="theme" id="themeDark" disabled><label class="form-check-label" for="themeDark">Dark</label></div>
+                    <div class="form-check"><input class="form-check-input" type="radio" name="theme" id="themeSystem" disabled><label class="form-check-label" for="themeSystem">System</label></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

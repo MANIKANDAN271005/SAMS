@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-2">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+        <div>
+            <p class="eyebrow mb-2">Reports & Analytics</p>
+            <h2 class="fw-bold mb-2">Attendance Insights</h2>
+            <p class="text-muted mb-0">Track attendance trends, summaries, and records in one concise view.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2 no-print">
+            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#reportFilters" aria-expanded="{{ has_filters|yesno:'true,false' }}" aria-controls="reportFilters"><i class="bi bi-funnel me-2"></i>Filters</button>
+            <a class="btn btn-outline-primary" href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}export=csv"><i class="bi bi-filetype-csv me-2"></i>Export CSV</a>
+            <button class="btn btn-primary" type="button" onclick="window.print()"><i class="bi bi-printer me-2"></i>Print</button>
+        </div>
+    </div>
+
+    <div class="collapse{% if has_filters %} show{% endif %} mb-4 no-print" id="reportFilters">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3 align-items-end" aria-label="Report filters">
+                    <div class="col-6 col-md-2"><label for="fStart" class="form-label small">From</label><input id="fStart" type="date" name="start" class="form-control" value="{{ filters.start }}"></div>
+                    <div class="col-6 col-md-2"><label for="fEnd" class="form-label small">To</label><input id="fEnd" type="date" name="end" class="form-control" value="{{ filters.end }}"></div>
+                    <div class="col-6 col-md-2"><label for="fClass" class="form-label small">Class</label>
+                        <select id="fClass" name="class" class="form-select">
+                            <option value="">All</option>
+                            {% for year in "1234" %}<option value="{{ year }}" {% if filters.class|stringformat:'s' == year %}selected{% endif %}>Year {{ year }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2"><label for="fDept" class="form-label small">Department</label>
+                        <select id="fDept" name="department" class="form-select">
+                            <option value="">All</option>
+                            {% for dept in departments %}<option value="{{ dept }}" {% if filters.department|lower == dept|lower %}selected{% endif %}>{{ dept }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2"><label for="fStatus" class="form-label small">Status</label>
+                        <select id="fStatus" name="status" class="form-select">
+                            <option value="">All</option>
+                            <option value="Present" {% if filters.status == 'Present' %}selected{% endif %}>Present</option>
+                            <option value="Absent" {% if filters.status == 'Absent' %}selected{% endif %}>Absent</option>
+                            <option value="Leave" {% if filters.status == 'Leave' %}selected{% endif %}>Leave</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-2"><label for="fQ" class="form-label small">Student</label><input id="fQ" type="search" name="q" class="form-control" placeholder="Name or roll" value="{{ filters.q }}"></div>
+                    <div class="col-12 d-flex gap-2 justify-content-end">
+                        <a href="{% url 'report' %}" class="btn btn-outline-secondary">Clear</a>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-funnel-fill me-2"></i>Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex justify-content-between align-items-start"><div><p class="text-muted small fw-semibold mb-2">Attendance %</p><h3 class="fw-bold mb-0 text-primary">{{ attendance_percentage }}%</h3></div><div class="stat-icon bg-primary"><i class="bi bi-percent"></i></div></div></div></div>
+        <div class="col-md-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex justify-content-between align-items-start"><div><p class="text-muted small fw-semibold mb-2">Present</p><h3 class="fw-bold mb-0 text-success">{{ present_count }}</h3></div><div class="stat-icon bg-success"><i class="bi bi-check2-circle"></i></div></div></div></div>
+        <div class="col-md-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex justify-content-between align-items-start"><div><p class="text-muted small fw-semibold mb-2">Absent</p><h3 class="fw-bold mb-0 text-danger">{{ absent_count }}</h3></div><div class="stat-icon bg-danger"><i class="bi bi-x-circle-fill"></i></div></div></div></div>
+        <div class="col-md-6 col-xl-3"><div class="card h-100"><div class="card-body d-flex justify-content-between align-items-start"><div><p class="text-muted small fw-semibold mb-2">Leave</p><h3 class="fw-bold mb-0 text-warning-emphasis">{{ leave_count }}</h3></div><div class="stat-icon bg-warning"><i class="bi bi-calendar-x"></i></div></div></div></div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8"><div class="card h-100"><div class="card-body"><div class="d-flex justify-content-between align-items-center mb-3"><div><h5 class="fw-bold mb-1">Monthly Trend</h5><p class="text-muted mb-0">Present percentage over the last 12 months</p></div><span class="badge bg-primary-subtle text-primary">{{ today }}</span></div><div style="height: 240px;"><canvas id="attendanceChart" role="img" aria-label="Line chart showing the monthly attendance percentage for the last 12 months"></canvas></div></div></div></div>
+        <div class="col-lg-4"><div class="card h-100"><div class="card-body"><h5 class="fw-bold mb-3">Summary</h5>
+            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Total records</span><strong>{{ report_count }}</strong></div>
+            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Present</span><strong>{{ present_count }} ({{ attendance_percentage }}%)</strong></div>
+            <div class="progress mb-3" style="height: 8px;" role="progressbar" aria-label="Present percentage" aria-valuenow="{{ attendance_percentage }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-success" style="width: {{ attendance_percentage }}%"></div></div>
+            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Absent</span><strong>{{ absent_count }} ({{ absent_percentage }}%)</strong></div>
+            <div class="progress mb-3" style="height: 8px;" role="progressbar" aria-label="Absent percentage" aria-valuenow="{{ absent_percentage }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-danger" style="width: {{ absent_percentage }}%"></div></div>
+            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Leave</span><strong>{{ leave_count }} ({{ leave_percentage }}%)</strong></div>
+            <div class="progress" style="height: 8px;" role="progressbar" aria-label="Leave percentage" aria-valuenow="{{ leave_percentage }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar bg-warning" style="width: {{ leave_percentage }}%"></div></div>
+        </div></div></div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="mb-3"><h5 class="fw-bold mb-1">Student-wise Summary</h5><p class="text-muted mb-0">Attendance totals per student for the selected filters</p></div>
+            {% if student_summaries %}
+                <div class="table-responsive">
+                    <table class="table align-middle" aria-label="Attendance summary per student">
+                        <thead><tr><th>Roll No</th><th>Student Name</th><th>Department</th><th>Days</th><th>Present</th><th>Absent</th><th>Leave</th><th>Attendance %</th></tr></thead>
+                        <tbody>
+                            {% for s in student_summaries %}
+                                <tr>
+                                    <td>{{ s.student__roll_no }}</td>
+                                    <td>{{ s.student__name }}</td>
+                                    <td>{{ s.student__department }}</td>
+                                    <td class="text-center">{{ s.total }}</td>
+                                    <td class="text-center text-success">{{ s.present }}</td>
+                                    <td class="text-center text-danger">{{ s.absent }}</td>
+                                    <td class="text-center text-warning-emphasis">{{ s.leave }}</td>
+                                    <td class="text-center"><span class="badge {% if s.percentage >= 75 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %}">{{ s.percentage }}%</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted mb-0">No attendance data for the selected filters.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-3">
+                <div><h5 class="fw-bold mb-1">Attendance Records</h5><p class="text-muted mb-0">{{ page_obj.paginator.count }} record(s) found</p></div>
+            </div>
+            {% if reports %}
+                <div class="table-responsive">
+                    <table class="table align-middle" aria-label="Attendance records report">
+                        <thead><tr><th>#</th><th>Roll No</th><th>Student Name</th><th>Date</th><th>Status</th></tr></thead>
+                        <tbody>
+                            {% for r in reports %}
+                                <tr>
+                                    <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
+                                    <td>{{ r.student.roll_no }}</td>
+                                    <td>{{ r.student.name }}</td>
+                                    <td>{{ r.date }}</td>
+                                    <td>{% if r.status == 'Present' %}<span class="badge bg-success-subtle text-success"><i class="bi bi-check2-circle me-1"></i>Present</span>{% elif r.status == 'Leave' %}<span class="badge bg-warning-subtle text-warning-emphasis"><i class="bi bi-calendar-x me-1"></i>Leave</span>{% else %}<span class="badge bg-danger-subtle text-danger"><i class="bi bi-x-circle me-1"></i>Absent</span>{% endif %}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if page_obj.has_other_pages %}
+                <nav class="mt-3 no-print" aria-label="Report pages">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Previous</a></li>{% endif %}
+                        <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                        {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?{% if filter_query %}{{ filter_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next</a></li>{% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5"><i class="bi bi-folder2-open fs-1 text-muted"></i><h5 class="mt-3">No attendance records found</h5><p class="text-muted mb-0">Attendance reports will appear here once attendance is recorded.</p></div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    (function () {
+        const ctx = document.getElementById('attendanceChart');
+        if (!ctx || typeof Chart === 'undefined') return;
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels: {{ trend_labels|safe }}, datasets: [{ label: 'Attendance %', data: {{ trend_values|safe }}, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.15)', tension: 0.35, fill: true, pointRadius: 4, pointHoverRadius: 6 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100 } } }
+        });
+    })();
+</script>
+{% endblock %}

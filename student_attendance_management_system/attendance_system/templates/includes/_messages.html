@@ -1,0 +1,43 @@
+{% if messages %}
+    <div class="toast-container-custom" aria-live="polite" aria-atomic="true">
+        {% for message in messages %}
+            {% if message.tags == 'success' or message.tags == 'alert-success' %}
+                <div class="toast toast-card text-bg-success show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000" data-bs-animation="true">
+                    <div class="toast-header text-white bg-success">
+                        <i class="fa-solid fa-circle-check me-2"></i>
+                        <strong class="me-auto">Success</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body text-white">{{ message }}</div>
+                </div>
+            {% elif message.tags == 'error' or message.tags == 'danger' or message.tags == 'alert-danger' %}
+                <div class="toast toast-card text-bg-danger show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000" data-bs-animation="true">
+                    <div class="toast-header text-white bg-danger">
+                        <i class="fa-solid fa-circle-exclamation me-2"></i>
+                        <strong class="me-auto">Error</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body text-white">{{ message }}</div>
+                </div>
+            {% elif message.tags == 'warning' or message.tags == 'alert-warning' %}
+                <div class="toast toast-card text-bg-warning show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000" data-bs-animation="true">
+                    <div class="toast-header bg-warning text-dark">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                        <strong class="me-auto">Warning</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">{{ message }}</div>
+                </div>
+            {% else %}
+                <div class="toast toast-card text-bg-info show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000" data-bs-animation="true">
+                    <div class="toast-header text-white bg-info">
+                        <i class="fa-solid fa-circle-info me-2"></i>
+                        <strong class="me-auto">Info</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body text-white">{{ message }}</div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% endif %}

@@ -1,0 +1,443 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Student{% endblock %}
+
+{% block content %}
+
+<style>
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 8px;
+    }
+
+    .page-header h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+        font-size: 1.05rem;
+        opacity: 0.95;
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid #667eea;
+    }
+
+    .form-section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: #2d3748;
+    }
+
+    .form-section-title i {
+        font-size: 1.5rem;
+        color: #667eea;
+    }
+
+    .required-indicator {
+        color: #e53e3e;
+        font-weight: 600;
+    }
+
+    .form-floating > label {
+        color: #718096;
+    }
+
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-select:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label,
+    .form-floating > .form-select:not(:placeholder-shown) ~ label {
+        color: #667eea;
+    }
+
+    .profile-upload-section {
+        text-align: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        border: 2px dashed #cbd5e0;
+    }
+
+    .profile-preview {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 1rem;
+        border-radius: 50%;
+        background-color: #edf2f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #cbd5e0;
+        overflow: hidden;
+    }
+
+    .profile-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .upload-label {
+        font-size: 0.95rem;
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .btn-group-custom {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-group-custom .btn {
+        flex: 1;
+        min-width: 150px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+    }
+
+    .btn-save:hover {
+        background: linear-gradient(135deg, #5568d3 0%, #63398b 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-reset {
+        background-color: #edf2f7;
+        border: 1px solid #cbd5e0;
+        color: #4a5568;
+    }
+
+    .btn-reset:hover {
+        background-color: #e2e8f0;
+        color: #2d3748;
+    }
+
+    .btn-cancel {
+        background-color: white;
+        border: 2px solid #cbd5e0;
+        color: #4a5568;
+    }
+
+    .btn-cancel:hover {
+        background-color: #f7fafc;
+        border-color: #a0aec0;
+        color: #2d3748;
+    }
+
+    .form-row-custom {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .page-header h2 {
+            font-size: 1.8rem;
+        }
+
+        .form-section {
+            padding: 1.5rem;
+        }
+
+        .btn-group-custom {
+            flex-direction: column;
+        }
+
+        .btn-group-custom .btn {
+            min-width: 100%;
+        }
+    }
+</style>
+
+<div class="container-fluid py-4">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="container">
+            <h2 id="addStudentTitle">
+                <i class="fa-solid fa-user-plus"></i>
+                Add New Student
+            </h2>
+            <p class="mb-0">
+                Complete the form below to register a new student in the system.
+            </p>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate aria-labelledby="addStudentTitle">
+
+            {% csrf_token %}
+
+            {% if errors %}
+                <div class="alert alert-danger" role="alert" aria-live="assertive">
+                    <h6 class="alert-heading">Please correct the following errors:</h6>
+                    <ul class="mb-0">
+                        {% for field, error in errors.items %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <!-- Profile Image Upload Section -->
+            <div class="profile-upload-section">
+                <div class="profile-preview" id="profilePreview">
+                    <i class="fa-solid fa-image"></i>
+                </div>
+                <div class="upload-label">Profile Picture</div>
+                <input
+                    type="file"
+                    id="profileImage"
+                    name="profile_image"
+                    accept="image/*"
+                    class="form-control form-control-sm d-none"
+                    aria-describedby="profileHelp">
+                <label for="profileImage" class="btn btn-sm btn-outline-primary cursor-pointer">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    Choose Image
+                </label>
+                <small id="profileHelp" class="d-block text-muted mt-2">PNG, JPG up to 5MB</small>
+            </div>
+
+            <!-- Student Information Section -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fa-solid fa-id-badge"></i>
+                    Student Information
+                </div>
+
+                <div class="form-row-custom">
+                    <!-- Roll Number -->
+                    <div class="form-floating">
+                        <input
+                            type="text"
+                            id="rollNo"
+                            name="roll_no"
+                            class="form-control {% if errors.roll_no %}is-invalid{% endif %}"
+                            placeholder="Enter Roll Number"
+                            value="{{ form_data.roll_no|default:'' }}"
+                            required>
+                        <label for="rollNo">
+                            Roll Number
+                            <span class="required-indicator">*</span>
+                        </label>
+                        <div class="invalid-feedback">Roll number is required and must be unique.</div>
+                    </div>
+
+                    <!-- Student Name -->
+                    <div class="form-floating">
+                        <input
+                            type="text"
+                            id="studentName"
+                            name="name"
+                            class="form-control {% if errors.name %}is-invalid{% endif %}"
+                            placeholder="Enter Student Name"
+                            value="{{ form_data.name|default:'' }}"
+                            required>
+                        <label for="studentName">
+                            Full Name
+                            <span class="required-indicator">*</span>
+                        </label>
+                        <div class="invalid-feedback">Please enter a valid student name.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information Section -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fa-solid fa-phone"></i>
+                    Contact Information
+                </div>
+
+                <div class="form-row-custom">
+                    <!-- Email -->
+                    <div class="form-floating">
+                        <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            class="form-control {% if errors.email %}is-invalid{% endif %}"
+                            placeholder="Enter Email"
+                            aria-describedby="emailHelp"
+                            value="{{ form_data.email|default:'' }}">
+                        <label for="email">
+                            Email Address
+                        </label>
+                        {% if errors.email %}
+                            <div class="invalid-feedback d-block">{{ errors.email }}</div>
+                        {% else %}
+                            <div class="form-text">Use a valid email format.</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div class="form-floating">
+                        <input
+                            type="tel"
+                            id="phone"
+                            name="phone"
+                            class="form-control {% if errors.phone %}is-invalid{% endif %}"
+                            placeholder="Enter Phone Number"
+                            aria-describedby="phoneHelp"
+                            value="{{ form_data.phone|default:'' }}">
+                        <label for="phone">
+                            Phone Number
+                        </label>
+                        {% if errors.phone %}
+                            <div class="invalid-feedback d-block">{{ errors.phone }}</div>
+                        {% else %}
+                            <div class="form-text">Enter a phone number using digits, spaces, or dashes.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Information Section -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    Academic Information
+                </div>
+
+                <div class="form-row-custom">
+                    <!-- Department -->
+                    <div class="form-floating">
+                        <input
+                            type="text"
+                            id="department"
+                            name="department"
+                            class="form-control {% if errors.department %}is-invalid{% endif %}"
+                            placeholder="Enter Department"
+                            value="{{ form_data.department|default:'' }}"
+                            required>
+                        <label for="department">
+                            Department
+                            <span class="required-indicator">*</span>
+                        </label>
+                        <div class="invalid-feedback">Department is required.</div>
+                    </div>
+
+                    <!-- Year -->
+                    <div class="form-floating">
+                        <select
+                            id="year"
+                            name="year"
+                            class="form-select {% if errors.year %}is-invalid{% endif %}"
+                            required
+                            aria-label="Select Academic Year">
+                            <option value="">Select Year</option>
+                            <option value="1" {% if form_data.year == '1' %}selected{% endif %}>First Year</option>
+                            <option value="2" {% if form_data.year == '2' %}selected{% endif %}>Second Year</option>
+                            <option value="3" {% if form_data.year == '3' %}selected{% endif %}>Third Year</option>
+                            <option value="4" {% if form_data.year == '4' %}selected{% endif %}>Fourth Year</option>
+                        </select>
+                        <label for="year">
+                            Academic Year
+                            <span class="required-indicator">*</span>
+                        </label>
+                        <div class="invalid-feedback">Please select a valid year.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="btn-group-custom">
+                <button
+                    type="submit"
+                    class="btn btn-save"
+                    aria-label="Save student details">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    Save Student
+                </button>
+
+                <button
+                    type="reset"
+                    class="btn btn-reset"
+                    aria-label="Reset form fields">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    Reset
+                </button>
+
+                <a
+                    href="{% url 'students' %}"
+                    class="btn btn-cancel"
+                    aria-label="Cancel and return to students list">
+                    <i class="fa-solid fa-ban"></i>
+                    Cancel
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+    document.getElementById('profileImage').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const preview = document.getElementById('profilePreview');
+                preview.innerHTML = '<img src="' + event.target.result + '" alt="Profile Preview">';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Bootstrap form validation
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            let forms = document.querySelectorAll('form');
+            Array.prototype.slice.call(forms).forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+</script>
+
+{% endblock %}
